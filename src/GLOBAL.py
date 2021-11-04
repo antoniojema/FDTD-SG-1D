@@ -6,21 +6,24 @@ c0 = 1./np.sqrt(eps0*mu0)
 
 COLOR = ["blue", "green", "red", "orange", "purple", "yellow"]
 
-LTS = True
-INTERPOLATING = False
-BORDER_LTS = False
-PLOT = True
+LTS           : bool = True
+INTERPOLATING : bool = False
+BORDER_LTS    : bool = False
+PLOT          : bool = True
 
-NTIMESTEPS = 1000000
-NVERBOSE   = 10000
-DELTACOARSE = 0.5
-MAX_SG = 2
-CFL = 0.73
-PPW = 5
-INTERVAL = 10
-INTERP_OLD = "1/4"
-INTERP_NEW = "1-interp_old"
-BORDER_LTS_LOOP = np.inf
+NTIMESTEPS  : int = 1000000
+NVERBOSE    : int = 10000
+DELTACOARSE : float = 0.5
+MAX_SG      : int = 1
+CFL         : float = 1.0
+PPW         : float = 10
+INTERVAL    : int = 10
+INTERP_OLD  : str = "1/4"
+INTERP_NEW  : str = "1-interp_old"
+BORDER_LTS_LOOP : type[np.inf] = np.inf
+
+BOUNDARY_INI = "PEC"
+BOUNDARY_END = "PEC"
 
 PROBE_NAME = "..\\probe_sg{}_cfl{:1.3F}".format(MAX_SG, CFL)
 if LTS:

@@ -12,7 +12,7 @@ from Math import gaussian
 ######################
 
 # Numero de celdas coarse
-Ncells_coarse = 20
+Ncells_coarse = 200
 
 # Tamaño de la malla coarse
 cfl = CFL
@@ -35,7 +35,7 @@ if max_SG in [0, 2]:
     ], dtype=int)
 elif max_SG == 1:
     fine_range = np.array([
-        [10, 15],
+        [50, 120],
     ], dtype=int)
 elif max_SG == 3:
     fine_range = np.array([
@@ -67,7 +67,7 @@ probe_Dt = np.array([
 
 Ngaussians = 1
 gaussian_index = np.array([
-    4,
+    [20, 150],
 ], dtype=int)
 gaussian_direction = np.array([
     +1,
@@ -81,7 +81,12 @@ gaussian_mean = np.array([
 gaussian_spread = np.array([
     ppw_to_sigma(PPW, delta=Ds_coarse, c0=c0, dbDecay=3.),
 ], dtype=float)
+gaussian_box_cells = np.array([
+    np.abs(i[1]-i[0]) for i in gaussian_index
+], dtype=int)
 
+J_E = [lambda t: gaussian(t, gaussian_mean[i], gaussian_spread[i], cfl               *gaussian_amplitude[i]) for i in range(Ngaussians)]
+J_H = [lambda t: gaussian(t, gaussian_mean[i], gaussian_spread[i], cfl*cfl/CE[max_SG]*gaussian_amplitude[i]) for i in range(Ngaussians)]
 
 ########################
 ###   FIRST CHECKS   ###
@@ -147,10 +152,13 @@ probe_n = np.zeros((Nprobes,), dtype=int)
 #########################
 ###   TIME STEPPING   ###
 #########################
-
+6
 if PLOT:
     # Plot stuff
     fig, ax = plt.subplots()
+    fig.set_size_inches(17, 7)
+    fig.set_dpi(100)
+    plt.tight_layout()
 
     xdata_ini = [None for _ in range(max_SG+1)]
     xdata_fin = [None for _ in range(max_SG+1)]
@@ -206,15 +214,24 @@ def advance(n_coarse):
 
     # Advance E
     advanceE(E, H, CE, CH, CE_border, H_border, fine_range, n_E, max_SG, max_SG, from_E=False)
-    E1_mur, E2_mur = advanceMur(E, E1_mur, E2_mur, CMur, max_SG)
+    
+    # Boundary conditions
+    if BOUNDARY_INI == "Mur":
+        E1_mur, E2_mur = advanceMur(E, E1_mur, E2_mur, CMur, max_SG, index=0)
+
+    if BOUNDARY_END == "Mur":
+        E1_mur, E2_mur = advanceMur(E, E1_mur, E2_mur, CMur, max_SG, index=1)
 
     # Source E
     for i in range(Ngaussians):
-        E[max_SG][gaussian_index[i]] += \
-            gaussian(t, gaussian_mean[i], gaussian_spread[i], gaussian_amplitude[i])
+        t_gauss = t
+        E[max_SG][gaussian_index[i,0]] += J_E[i](t_gauss)
+        
+        t_gauss = t - (gaussian_box_cells[i]/cfl + 0.5/cfl + 0.5) * Dt_coarse
+        E[max_SG][gaussian_index[i,1]] -= J_E[i](t_gauss)
 
     # Advance t
-    t += 0.5*Dt_coarse
+    #t += 0.5*Dt_coarse
 
     # Advance H
     advanceH(E, H, CE, CH, CE_border, H_border, fine_range, n_E, max_SG, max_SG)
@@ -222,11 +239,16 @@ def advance(n_coarse):
     # Source H
     for i in range(Ngaussians):
         sum_index = int(-(gaussian_direction[i]+1)/2)
-        H[max_SG][gaussian_index[i]+sum_index] += gaussian_direction[i] * \
-            gaussian(t, gaussian_mean[i]+0.5*Dt_coarse, gaussian_spread[i], gaussian_amplitude[i]/CE[max_SG]*cfl)
-
+        
+        t_gauss = t - (0.5/cfl - 0.5) * Dt_coarse
+        H[max_SG][gaussian_index[i,0]+sum_index] += gaussian_direction[i] * J_H[i](t_gauss)
+        
+        t_gauss = t - (gaussian_box_cells[i]/cfl + 0.5/cfl - 0.5)*Dt_coarse
+        H[max_SG][gaussian_index[i,1]-1-sum_index] -= gaussian_direction[i] * J_H[i](t_gauss)
+    
     # Advance t
-    t += 0.5 * Dt_coarse
+    #t += 0.5 * Dt_coarse
+    t += Dt_coarse
 
     # Probes
     for i in range(Nprobes):

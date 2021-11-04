@@ -57,9 +57,14 @@ def advanceH(E, H, CE, CH, CE_border, H_border, fine_range, n_E, sg, max_SG):
 ###############
 ###   MUR   ###
 ###############
-def advanceMur(E, E1, E2, CMur, max_SG):
-    E[max_SG][ 0] = E1 + CMur * (E[max_SG][ 1] - E[max_SG][ 0])
-    E[max_SG][-1] = E2 + CMur * (E[max_SG][-2] - E[max_SG][-1])
+def advanceMur(E, E1, E2, CMur, max_SG, index):
+    if index == 0:
+        E[max_SG][ 0] = E1 + CMur * (E[max_SG][ 1] - E[max_SG][ 0])
+    elif index == 1:
+        E[max_SG][-1] = E2 + CMur * (E[max_SG][-2] - E[max_SG][-1])
+    elif index == 2:
+        E[max_SG][ 0] = E1 + CMur * (E[max_SG][ 1] - E[max_SG][ 0])
+        E[max_SG][-1] = E2 + CMur * (E[max_SG][-2] - E[max_SG][-1])
 
     E1 = E[max_SG][ 1]
     E2 = E[max_SG][-2]
