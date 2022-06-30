@@ -85,8 +85,13 @@ gaussian_box_cells = np.array([
     np.abs(i[1]-i[0]) for i in gaussian_index
 ], dtype=int)
 
-J_E = [lambda t: gaussian(t, gaussian_mean[i], gaussian_spread[i], cfl               *gaussian_amplitude[i]) for i in range(Ngaussians)]
-J_H = [lambda t: gaussian(t, gaussian_mean[i], gaussian_spread[i], cfl*cfl/CE[max_SG]*gaussian_amplitude[i]) for i in range(Ngaussians)]
+J_E = [lambda t:
+    gaussian(t, gaussian_mean[i], gaussian_spread[i], cfl*gaussian_amplitude[i]) if t < gaussian_mean[i]+2*gaussian_spread else 0
+for i in range(Ngaussians)]
+
+J_H = [lambda t:
+    gaussian(t, gaussian_mean[i], gaussian_spread[i], cfl*np.sqrt(eps0/mu0)*gaussian_amplitude[i]) if t < gaussian_mean[i]+2*gaussian_spread else 0
+for i in range(Ngaussians)]
 
 ########################
 ###   FIRST CHECKS   ###
